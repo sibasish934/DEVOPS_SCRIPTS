@@ -1,0 +1,94 @@
+## CI/CD set up using GitOps architecture:
+
+# Create a cluster with atleast 2 nodegroup with t3.medium/t2.medium instances.
+
+# Connect to cluster using the below command:
+  - aws eks update kubeconfig –region <region> --name <cluster-name>
+
+# After this configure the AWS load balancer controller as we will be use ingress to expose our applications.
+
+Follow this documentation to install AWS Load Balancer controller -
+
+https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
+
+# Create a OIDC provider if not present already.
+Command - eksctl utils associate-iam-oidc-provider --cluster <cluster-name> --approve
+
+Refer the documentation to create a policy.
+Now create role using the the above created policy.
+AWS Console -> IAM -> Choose Trusted Entity type as Web Identity -> Provider -> choose OIDC
+-> Audience (sts.amazonaws.com) -> Next -> Choose the above created policy -> Create
+
+Now copy the role arn from the console and create service account using YAML file.
+
+helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=<cluster-name> --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller
+
+Check the status by:
+
+Command - - kubectl get deploy -n kube-system
+
+Now we can move ahead with the Jenkins installation and creating our applications.
+
+- Install jenkins on ubuntu server and access it using the public IP.
+
+Steps:
+
+## Java installation - 
+
+  Command: sudo apt update
+           sudo apt install default-jre -y
+           sudo apt install default-jdk -y
+           javac -version
+
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install jenkins
+# sudo systemctl start jenkins.service
+# apt install docker.io
+# sudo usermod -a -G docker jenkins
+
+## Install AWS CLI -
+
+# apt install unzip
+# curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+# unzip awscliv2.zip
+# sudo ./aws/install
+
+## Switch to jenkins user
+# aws configure with minimum privileges credentials.
+# Check if docker is accessible using docker ps command
+
+
+Now login using publicip:8080
+
+# cat /var/lib/jenkins/secrets/initialAdminPassword  -- to get the initial password
+
+Set up the credentials thereafter.
+
+## ArgoCD installation steps
+
+# Now install ArgoCD in the Kubernetes cluster by referring the official documentation.
+# kubectl create namespace argocd
+# kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# Now apply the YAML file to expose it using ingress which is present in official documentation.
+
+To login to ArgoCD UI - please use the below command in k8s cluster
+
+# kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}"
+
+The above command will output an base64 encoded text. Use base64 encode-decode platform to decode it.
+
+Now you will see the argocd UI if the SSL certs and all were rightly passed. You may also chose to port-forward and use it in your local machine.
+
+
+Now create a new app in ArgoCD.
+
+Create two jobs in jenkins with the help of groovy script.
+
+Create a token in github and add it to jenkins for the update-manifest job to push changes to github.
+
+To trigger build automatically - go to github and select webhook - create webhook with http://<jenkinsurl>/github-webhook/ and change the job to Github hook trigger for GitSCM polling.

@@ -1,0 +1,25 @@
+node{
+    stage("Git Clone"){
+                  git branch: 'main', url: 'https://github.com/Suraj-207/kubernetes-manifest.git'
+    }
+            
+    stage('Update GIT') {
+            script {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                        //def encodedPassword = URLEncoder.encode("$GIT_PASSWORD",'UTF-8')
+                        sh "git config user.email sksuraj148333@gmail.com"
+                        sh "git config user.name SurajKumar"
+                        //sh "git switch master"
+                        sh "cat 2048-deployment.yaml"
+                        sh "sed -i 's+suraj-cicd.*+suraj-cicd:${DOCKERTAG}+g' 2048-deployment.yaml"
+                        sh "cat 2048-deployment.yaml"
+                        sh "git add ."
+                        sh "git commit -m 'Done by Jenkins Job changemanifest: ${env.BUILD_NUMBER}'"
+                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/kubernetes-manifest.git HEAD:main"
+      }
+    }
+  }
+}
+
+}

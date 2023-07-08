@@ -1,0 +1,30 @@
+node {
+           stage("Git Cloning"){
+                  git branch: 'main', url: 'https://github.com/Suraj-207/Devops3.git'
+            }
+
+            stage("ECR Login"){
+                    sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 375925931428.dkr.ecr.us-east-1.amazonaws.com'
+            }
+
+           stage("Building Docker Image"){
+                sh 'docker build -t node-app practice_node'
+                sh 'docker tag node-app:latest 375925931428.dkr.ecr.us-east-1.amazonaws.com/suraj-cicd:${BUILD_NUMBER}'
+               }
+        
+
+           stage("Push Image to ECR"){
+               sh 'docker push 375925931428.dkr.ecr.us-east-1.amazonaws.com/suraj-cicd:${BUILD_NUMBER}'
+           }
+        
+        //   stage('Kubernetes Deployment') {
+        //         sh 'kubectl apply -f  2048-deployment.yaml'
+        //         sh 'kubectl apply -f 2048-service.yaml'
+        //         sh 'kubectl apply -f 2048-ingress.yaml'
+        //   }
+           
+           stage('Trigger update-manifest for github') {
+        	echo "Triggering the update job"
+	        build job: 'update-manifest', parameters: [string(name: 'DOCKERTAG', value: env.BUILD_NUMBER)]
+}
+}

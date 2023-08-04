@@ -1,0 +1,65 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Action": [
+				"ec2:Describe*",
+				"ec2:DescribeInstances",
+				"ec2:DescribeKeyPairs",
+				"ec2:DescribeVpcs",
+				"ec2:DescribeSubnets",
+				"ec2:DescribeSecurityGroups",
+				"ecs:DescribeClusters",
+				"ecs:ListClusters",
+				"ecs:DescribeServices",
+				"ecs:ListAccountSettings",
+				"iam:PassRole",
+				"iam:GetRole",
+				"iam:ListInstanceProfilesForRole",
+				"ecs:ListTagsForResource",
+				"cloudformation:CreateStack"
+			],
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "servicediscovery:ListNamespaces",
+			"Resource": "*"
+		},
+		{
+			"Sid": "AllowWithRestrictions",
+			"Effect": "Allow",
+			"Action": [
+				"ec2:RunInstances",
+				"ecs:CreateCluster",
+				"ecs:CreateCluster",
+				"ecs:RegisterContainerInstance",
+				"ecs:CreateService",
+				"ec2:CreateSecurityGroup",
+				"ec2:CreateSubnet",
+				"ec2:CreateTags"
+			],
+			"Resource": "*",
+			"Condition": {
+				"StringEquals": {
+					"aws:RequestTag/ENV": "PROD"
+				},
+				"ForAnyValue:StringEquals": {
+					"aws:TagKeys": [
+						"ENV"
+					]
+				}
+			}
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"logs:CreateLogGroup",
+				"logs:CreateLogStream",
+				"logs:PutLogEvents"
+			],
+			"Resource": "arn:aws:logs:ap-south-1:027349018915:log-group:/ecs/*"
+		}
+	]
+}

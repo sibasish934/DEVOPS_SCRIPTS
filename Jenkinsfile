@@ -1,65 +1,65 @@
-##this pipeline basically builds the docker image the push it to the ECR repositry and then deploy the image into the EKS environment.
 pipeline {
-    agent any
-    environment {
-        AWS_ACCOUNT_ID = "444320815966"
-        AWS_DEFAULT_REGION = "ap-south-1"
-        IMAGE_REPO_NAME = "collection_parking_logic_uat"
-		IMAGE_TAG="latest"
-        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
+  environment {
+    registry = '444320815966.dkr.ecr.ap-south-1.amazonaws.com/collection_parking_logic_uat'
+    registryCredential = 'WheelsEMI-prod-cluster'
+  }
+  
+  agent any
+  
+  stages {
+    stage("Removing Previous Build") {
+      steps {
+        echo "CLEANING PREVIOUS RUNNING PROCESS"
+        // sh 'docker ps'
+        // sh 'docker stop collection_parking_logic'
+        // sh 'docker rm collection_parking_logic'
+        echo "Cleanup Done"
+      }
     }
-   
-    stages {
-        stage('Removing Previous Build') {
-            steps {
-                echo "CLEANING PREVIOUS RUNNING PROCESS"
-                echo "Cleanup Done"
-            }
-        }
-        
-        stage('Docker Build Image') {
-            steps {
-                script {
-                    sh 'docker version'
-                    sh 'whoami'
-                    sh 'pwd'
-                    sh 'ls -lrt'
-                    sh 'ifconfig'
-                    sh 'docker.build "${IMAGE_REPO_NAME}:${IMAGE_TAG}"
-                    sh "docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:$IMAGE_TAG"
-                    sh 'docker image list'
-                }
-            }
-        }
-        
-        stage('Push Image to ECR') {
-            steps {
-                script {
-				    sh "aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-                    sh "docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}"
-                }
-            }
-        }
-        
-        stage('Deploy to K8s') {
-            steps {
-                echo "Deployment started..."
-                sh 'whoami'
-                sh 'pwd'
-                sh 'ls -lrt'
-                sh 'ifconfig'
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
-            }
-        }
+    
+    stage("Docker Build Image") {
+      steps {
+        sh 'docker version'
+        sh 'whoami'
+        sh 'pwd'
+        sh 'ls -lrt'
+        sh 'ifconfig'
+        sh 'docker build -t $registry:latest .'
+        sh 'docker image list'
+      }
     }
- 
-    post {
-        always {
-            cleanWs()
-            echo "Workspace cleaned"
+    
+    stage('Push Image to ECR') {
+      steps {
+        withAWS(credentials: registryCredential, region: 'ap-south-1') {
+          sh "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $registry"
+          sh 'docker push $registry:latest'
         }
+      }
     }
+    
+    stage('Deploy to K8s') {
+      steps {
+	withAWS(credentials: registryCredential, region: 'ap-south-1') {
+        echo "Deployment started..."
+        sh 'whoami'
+        sh 'pwd'
+        sh 'ls -lrt'
+        sh 'ifconfig'
+        sh 'kubectl apply -f deployment.yaml'
+        sh 'kubectl apply -f service.yaml'
+        sh 'kubectl get pods'
+        sh 'kubectl get svc'
+	}
+      }
+    }
+  }
+
+  post {
+    always {
+      cleanWs()
+      echo "Workspace cleaned"
+      // sh "docker rmi $registry:latest"
+    }
+  }
 }

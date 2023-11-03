@@ -1,3 +1,4 @@
+## this the jenkins file code to  checkout the code from the git and then build the docker file and then push it to ecr and then 
 pipeline {
   environment {
     registry = '444320815966.dkr.ecr.ap-south-1.amazonaws.com/collection_parking_logic_uat'

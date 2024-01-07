@@ -7,7 +7,7 @@ subject="pod error in your Kubernetes Cluster"
 #TWILIO_PHONE_NUMBER="Your-twilio-phone-no"
 RECIPIENT_PHONE_NUMBER="recevier's-number"
 
-kubectl get pods -o json > latest.json
+kubectl get pods --all-namespaces -o json > latest.json
 
 # Check for CrashLoopBackOff errors
 jq '.items[] | select(.status.containerStatuses[].state.waiting.reason == "CrashLoopBackOff") | .metadata.name, .metadata.namespace, .status.containerStatuses[].state.waiting.reason' latest.json | while read pod_name pod_namespace pod_status pod_reason; do

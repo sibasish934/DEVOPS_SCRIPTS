@@ -69,4 +69,9 @@ and cert       │ tls.key: **priv key** │          │         │ name: ngin
                │                               │
                └───────────────────────────────┘
 ```
-
+#  Steps to solve Git Merge conflicts which are:- 
+  1. The Git merge conflict arises when a pull request is opened and then the merge conflict is arises.
+  2. In that case the conflict ocuurs in the following command :- git push upstream main
+  3. Check for the git rebase --main
+  4. Then you have to push the changes forcefully
+  5. git push -f origin main

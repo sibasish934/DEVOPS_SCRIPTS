@@ -75,3 +75,19 @@ and cert       │ tls.key: **priv key** │          │         │ name: ngin
   3. Check for the git rebase --main
   4. Then you have to push the changes forcefully
   5. git push -f origin main
+
+# Datree CLI installation and usage:- 
+  1. The Datree is cli tool that check the kubernetes manifests before applying in the production it basically check the maniest yaml file using production env.
+
+# Kubecost:- Monitoring the cost of the kubernetes env is very essentials:-
+ 1. This tool help us to monitor the cost of the kubernetes env. Using the following commands install the kubecost onto your cluster in a separate namespace.
+ 2. helm install kubecost cost-analyzer \
+--repo https://kubecost.github.io/cost-analyzer/ \
+--namespace kubecost --create-namespace \
+--set kubecostToken="c2liYXNpc2hzYXRwYXRoeTIwMDJAZ21haWwuY29txm343yadf98"
+3. kubectl port-forward --namespace kubecost deployment/kubecost-cost-analyzer 9090
+4. Updating kubecost:- helm repo add kubecost https://kubecost.github.io/cost-analyzer/ && \
+helm repo update && \
+helm upgrade kubecost kubecost/cost-analyzer -n kubecost
+5. Deleting the kubecost from your cluster :- helm uninstall kubecost -n kubecost
+6. to check the cost from the cli we can use krew into the cluster and then use this command :- kubectl cost pod -n kubecost
